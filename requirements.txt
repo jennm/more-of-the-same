@@ -1,0 +1,9 @@
+pandas
+nltk
+numpy
+matplotlib
+scipy
+scikit-learn
+gensim
+textwrap
+pickle

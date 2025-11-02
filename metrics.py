@@ -1,6 +1,7 @@
 
 from sklearn.metrics.pairwise import cosine_distances
-def subset_similarity_metric(canidate_set,target_set,word_model,exclude_words=True, words_to_exclude=[]):
+
+def chamfer_distance(canidate_set,target_set,word_model,exclude_words=True, words_to_exclude=[]):
     most_similar_words = list()
     for inferred_word in canidate_set:
         if exclude_words:
@@ -15,4 +16,4 @@ def subset_similarity_metric(canidate_set,target_set,word_model,exclude_words=Tr
     return sum(most_similar_words)/len(most_similar_words)
 
 def subset_representation_bias_score(c, t1, t2, word_model, exclude_words=True, words_to_exclude=[]):
-    return subset_similarity_metric(c, t1, word_model, exclude_words=exclude_words, words_to_exclude=words_to_exclude) - subset_similarity_metric(c, t2, word_model, exclude_words=exclude_words, words_to_exclude=words_to_exclude)
+    return chamfer_distance(c, t1, word_model, exclude_words=exclude_words, words_to_exclude=words_to_exclude) - chamfer_distance(c, t2, word_model, exclude_words=exclude_words, words_to_exclude=words_to_exclude)
