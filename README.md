@@ -14,15 +14,15 @@ python3 -m venv more-of-the-same
 This creates a folder named `more-of-the-same` that contains the isolated Python environment.
 
 #### 2. Activate the virtual environment
-*macOS / Linux*
+**macOS / Linux**
 ```
 source more-of-the-same/bin/activate
 ```
-*Windows (PowerShell)*
+**Windows (PowerShell)**
 ```
 more-of-the-same\Scripts\Activate.ps1
 ```
-*Windows (Command Prompt)*
+**Windows (Command Prompt)**
 ```
 more-of-the-same\Scripts\activate.bat
 ```
