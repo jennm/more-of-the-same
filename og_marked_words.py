@@ -11,20 +11,26 @@ from collections import Counter
 import argparse
 from collections import defaultdict
 import math
-import sys
 
-def get_log_odds(df1, df2, df0,verbose=False,lower=True, prior=True, frac_words=1):
+
+def get_log_odds(df1, df2, df0, verbose=False, lower=True):
     """Monroe et al. Fightin' Words method to identify top words in df1 and df2
     against df0 as the background corpus"""
     if lower:
-        counts1 = defaultdict(int,[[i,j] for i,j in df1.str.lower().str.split(expand=True).stack().replace('[^a-zA-Z\s]','',regex=True).value_counts().items()])
-        counts2 = defaultdict(int,[[i,j] for i,j in df2.str.lower().str.split(expand=True).stack().replace('[^a-zA-Z\s]','',regex=True).value_counts().items()])
-        prior = defaultdict(int,[[i,j] for i,j in df0.str.lower().str.split(expand=True).stack().replace('[^a-zA-Z\s]','',regex=True).value_counts().items()])
+        counts1 = defaultdict(int, [[i, j] for i, j in df1.str.lower().str.split(
+            expand=True).stack().replace('[^a-zA-Z\s]', '', regex=True).value_counts().items()])
+        counts2 = defaultdict(int, [[i, j] for i, j in df2.str.lower().str.split(
+            expand=True).stack().replace('[^a-zA-Z\s]', '', regex=True).value_counts().items()])
+        prior = defaultdict(int, [[i, j] for i, j in df0.str.lower().str.split(
+            expand=True).stack().replace('[^a-zA-Z\s]', '', regex=True).value_counts().items()])
     else:
-        counts1 = defaultdict(int,[[i,j] for i,j in df1.str.split(expand=True).stack().replace('[^a-zA-Z\s]','',regex=True).value_counts().items()])
-        counts2 = defaultdict(int,[[i,j] for i,j in df2.str.split(expand=True).stack().replace('[^a-zA-Z\s]','',regex=True).value_counts().items()])
-        prior = defaultdict(int,[[i,j] for i,j in df0.str.split(expand=True).stack().replace('[^a-zA-Z\s]','',regex=True).value_counts().items()])
-    
+        counts1 = defaultdict(int, [[i, j] for i, j in df1.str.split(expand=True).stack(
+        ).replace('[^a-zA-Z\s]', '', regex=True).value_counts().items()])
+        counts2 = defaultdict(int, [[i, j] for i, j in df2.str.split(expand=True).stack(
+        ).replace('[^a-zA-Z\s]', '', regex=True).value_counts().items()])
+        prior = defaultdict(int, [[i, j] for i, j in df0.str.split(expand=True).stack(
+        ).replace('[^a-zA-Z\s]', '', regex=True).value_counts().items()])
+
     sigmasquared = defaultdict(float)
     sigma = defaultdict(float)
     delta = defaultdict(float)
@@ -45,58 +51,53 @@ def get_log_odds(df1, df2, df0,verbose=False,lower=True, prior=True, frac_words=
     n1 = sum(counts1.values())
     n2 = sum(counts2.values())
     nprior = sum(prior.values())
-    
+
     for word in prior.keys():
         if prior[word] > 0:
-            l1 = float(counts1[word] + prior[word]) / (( n1 + nprior ) - (counts1[word] + prior[word]))
-            l2 = float(counts2[word] + prior[word]) / (( n2 + nprior ) - (counts2[word] + prior[word]))
-            sigmasquared[word] =  1/(float(counts1[word]) + float(prior[word])) + 1/(float(counts2[word]) + float(prior[word]))
-            sigma[word] =  math.sqrt(sigmasquared[word])
-            delta[word] = ( math.log(l1) - math.log(l2) ) / sigma[word]
-
+            l1 = float(counts1[word] + prior[word]) / \
+                ((n1 + nprior) - (counts1[word] + prior[word]))
+            l2 = float(counts2[word] + prior[word]) / \
+                ((n2 + nprior) - (counts2[word] + prior[word]))
+            sigmasquared[word] = 1/(float(counts1[word]) + float(prior[word])) + \
+                1/(float(counts2[word]) + float(prior[word]))
+            sigma[word] = math.sqrt(sigmasquared[word])
+            delta[word] = (math.log(l1) - math.log(l2)) / sigma[word]
 
     if verbose:
         for word in sorted(delta, key=delta.get)[:10]:
             print("%s, %.3f" % (word, delta[word]))
 
-        for word in sorted(delta, key=delta.get,reverse=True)[:10]:
+        for word in sorted(delta, key=delta.get, reverse=True)[:10]:
             print("%s, %.3f" % (word, delta[word]))
     return delta
 
 
-
-
-def marked_words(df, target_val, target_col, unmarked_val,verbose=False, prior=True, frac_words=1):
-
+def marked_words(df, target_val, target_col, unmarked_val, verbose=False):
     """Get words that distinguish the target group (which is defined as having 
     target_group_vals in the target_group_cols column of the dataframe) 
     from all unmarked_attrs (list of values that correspond to the categories 
     in unmarked_attrs)"""
 
     grams = dict()
-    thr = 1.96 #z-score threshold
+    thr = 1.96  # z-score threshold
 
     subdf = df.copy()
     for i in range(len(target_val)):
-        subdf = subdf.loc[subdf[target_col[i]]==target_val[i]]
-    
-    # unmarked_df = df.copy()
-    # for i in range(len(unmarked_val)):
-    #     unmarked_df = unmarked_df.loc[unmarked_df[target_col[i]]==unmarked_val[i]]
+        subdf = subdf.loc[subdf[target_col[i]] == target_val[i]]
 
     for i in range(len(unmarked_val)):
-    # for i in range(1):#len(unmarked_val)):
-        thr  = 1.96#*1.5
-        delt = get_log_odds(subdf['text'], df.loc[df[target_col[i]]==unmarked_val[i]]['text'],df['text'],verbose, prior=prior, frac_words=frac_words) #first one is the positive-valued one
-        # delt = get_log_odds(subdf['text'], unmarked_df['text'], df['text'],verbose)
-                
+        thr = 1.96
+        delt = get_log_odds(subdf['text'], df.loc[df[target_col[i]] == unmarked_val[i]]['text'], df['text'],
+                            # first one is the positive-valued one
+                            verbose)
+
         c1 = []
         c2 = []
-        for k,v in delt.items():
+        for k, v in delt.items():
             if v > thr:
-                c1.append([k,v])
+                c1.append([k, v])
             elif v < -thr:
-                c2.append([k,v])
+                c2.append([k, v])
 
         if 'target' in grams:
             grams['target'].extend(c1)
@@ -108,15 +109,13 @@ def marked_words(df, target_val, target_col, unmarked_val,verbose=False, prior=T
             grams[unmarked_val[i]] = c2
     # print(grams)
     grams_refine = dict()
-    
 
     for r in grams.keys():
         temp = []
-        thr = len(unmarked_val) # must satisfy all intersections
-        for k,v in Counter([word for word, z in grams[r]]).most_common():
+        thr = len(unmarked_val)  # must satisfy all intersections
+        for k, v in Counter([word for word, z in grams[r]]).most_common():
             if v >= thr:
                 z_score_sum = np.sum([z for word, z in grams[r] if word == k])
-                # print(k, v, z_score_sum)
                 temp.append([k, z_score_sum])
 
         grams_refine[r] = temp
@@ -125,18 +124,19 @@ def marked_words(df, target_val, target_col, unmarked_val,verbose=False, prior=T
 
 def main():
     parser = argparse.ArgumentParser(description="Just an example",
-                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("filename", help="Generated personas file")
-    parser.add_argument("--target_val",nargs="*", 
-    type=str,
-    default=[''], help="List of demographic attribute(s) for target group of interest")
+    parser.add_argument("--target_val", nargs="*",
+                        type=str,
+                        default=[''], help="List of demographic attribute(s) for target group of interest")
     parser.add_argument("--target_col", nargs="*",
-    type=str,
-    default=[''],help="List of demographic categories that distinguish target group")
+                        type=str,
+                        default=[''], help="List of demographic categories that distinguish target group")
     parser.add_argument("--unmarked_val", nargs="*",
-    type=str,
-    default=[''],help="List of unmarked default values for relevant demographic categories")
-    parser.add_argument("--verbose", action='store_true',help="If set to true, prints out top words calculated by Fightin' Words")
+                        type=str,
+                        default=[''], help="List of unmarked default values for relevant demographic categories")
+    parser.add_argument("--verbose", action='store_true',
+                        help="If set to true, prints out top words calculated by Fightin' Words")
 
     args = parser.parse_args()
 
@@ -151,10 +151,12 @@ def main():
 
     # Optional: filter out unwanted prompts
     # df = df.loc[~df['prompt'].str.contains('you like')]
-    top_words = marked_words(df, target_val, target_col, unmarked_val,verbose=args.verbose)
+    top_words = marked_words(df, target_val, target_col,
+                             unmarked_val, verbose=args.verbose)
     print("Top words:")
     print(top_words)
 
+
 if __name__ == '__main__':
-    
+
     main()

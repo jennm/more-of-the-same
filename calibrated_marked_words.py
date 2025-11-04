@@ -14,7 +14,7 @@ import nltk
 import numpy as np
 import pandas as pd
 
-def get_log_odds(df1, df2, df0,lower=True, prior=True, prior_type='hybrid', return_computation=False):
+def get_log_odds(df1, df2, df0,p=0.15, lower=True, prior=True, prior_type='hybrid', return_computation=False):
     """Monroe et al. Fightin' Words method to identify top words in df1 and df2
     against df0 as the background corpus"""
     
@@ -42,7 +42,7 @@ def get_log_odds(df1, df2, df0,lower=True, prior=True, prior_type='hybrid', retu
         c = .225
     elif prior_type == 'hybrid':
         english_prior = nltk.FreqDist([w.lower() for w in brown.words()])
-        p = 0.25
+        # p = 0.15 # this led to better results on our little subset of the data :)
         c_english = .225
         c_topic = .45
         c = p * c_topic + (1 - p) * c_english
@@ -135,7 +135,7 @@ def get_log_odds(df1, df2, df0,lower=True, prior=True, prior_type='hybrid', retu
 
 
 
-def calibrated_marked_words(df, target_val, target_col, unmarked_val,occupation=None,return_computation=False):
+def calibrated_marked_words(df, target_val, target_col, unmarked_val, occupation=None, p=0.15,return_computation=False):
 
     """Get words that distinguish the target group (which is defined as having 
     target_group_vals in the target_group_cols column of the dataframe) 
@@ -154,9 +154,9 @@ def calibrated_marked_words(df, target_val, target_col, unmarked_val,occupation=
 
     for i in range(len(unmarked_val)):
         if return_computation:
-            delt, computation = get_log_odds(subdf['text'], df.loc[df[target_col[i]]==unmarked_val[i]]['text'],df['text'],return_computation=return_computation)
+            delt, computation = get_log_odds(subdf['text'], df.loc[df[target_col[i]]==unmarked_val[i]]['text'],df['text'], p=p, return_computation=return_computation)
         else:
-            delt = get_log_odds(subdf['text'], df.loc[df[target_col[i]]==unmarked_val[i]]['text'],df['text'],return_computation=return_computation) #first one is the positive-valued one
+            delt = get_log_odds(subdf['text'], df.loc[df[target_col[i]]==unmarked_val[i]]['text'],df['text'],p=p, return_computation=return_computation) #first one is the positive-valued one
         
         c1 = []
         c2 = []
